@@ -9,6 +9,7 @@ import {
 
 const Marketplace = () => {
   const [marketplaceListings, setMarketplaceListings] = useState([]);
+  const [nftMetadata, setNftMetadata] = useState({});
   const chainId = useChainId();
   const wagmiConfig = useConfig();
 
@@ -35,10 +36,12 @@ const Marketplace = () => {
       for (let tokenId = 0; tokenId < totalSupply; tokenId++) {
         const listing = await contract.listings(tokenId);
         if (listing.isListed) {
+          const metadata = await fetchNFTMetadata(tokenId, contract);
           listings.push({
             tokenId: tokenId.toString(),
             price: ethers.formatEther(listing.price),
             seller: listing.seller,
+            metadata: metadata,
           });
         }
       }
@@ -46,6 +49,19 @@ const Marketplace = () => {
       setMarketplaceListings(listings);
     } catch (error) {
       console.error("Error fetching marketplace listings:", error);
+    }
+  };
+
+  // Function to fetch metadata for each NFT
+  const fetchNFTMetadata = async (tokenId, contract) => {
+    try {
+      const tokenURI = await contract.tokenURI(tokenId);
+      const response = await fetch(tokenURI);
+      const metadata = await response.json();
+      return metadata;
+    } catch (error) {
+      console.error(`Error fetching metadata for token ${tokenId}:`, error);
+      return null;
     }
   };
 
@@ -88,10 +104,46 @@ const Marketplace = () => {
       <div>
         {marketplaceListings.length > 0 ? (
           marketplaceListings.map((listing) => (
-            <div key={listing.tokenId} className="border p-4 mb-4 rounded-lg">
-              <p>Token ID: {listing.tokenId}</p>
+            <div
+              key={listing.tokenId}
+              className="border p-4 mb-4 rounded-lg"
+            >
+              {/* NFT Image */}
+              {listing.metadata && listing.metadata.image && (
+                <img
+                  src={listing.metadata.image}
+                  alt={listing.metadata.name}
+                  className="w-full h-48 object-cover rounded-md mb-3"
+                />
+              )}
+
+              {/* NFT Name */}
+              <h3 className="text-lg font-bold">{listing.metadata?.name || "NFT #" + listing.tokenId}</h3>
+
+              {/* NFT Description */}
+              {listing.metadata?.description && (
+                <p className="text-sm text-gray-600 mb-3">{listing.metadata.description}</p>
+              )}
+
+              {/* NFT Attributes */}
+              {listing.metadata?.attributes && (
+                <div className="mb-3">
+                  <h4 className="text-sm font-semibold">Attributes:</h4>
+                  <ul>
+                    {listing.metadata.attributes.map((attr, index) => (
+                      <li key={index} className="text-sm text-gray-500">
+                        {attr.trait_type}: {attr.value}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Price and Seller */}
               <p>Price: {listing.price} ETH</p>
               <p>Seller: {listing.seller}</p>
+
+              {/* Buy Button */}
               <button
                 onClick={() => handleBuyNFT(listing.tokenId, listing.price)}
                 className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"

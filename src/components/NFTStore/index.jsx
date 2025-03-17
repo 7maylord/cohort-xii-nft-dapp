@@ -7,7 +7,7 @@ import { getEthersProvider, getEthersSigner } from "../../config/wallet-connecti
 import { isSupportedNetwork } from "../../utils";
 
 // NFTCard component that's contained within this file
-const NFTCard = ({ nft, listNFTForSale }) => {
+const NFTCard = ({ nft, listNFTForSale, cancelListing }) => {
     const [showModal, setShowModal] = useState(false);
     const [price, setPrice] = useState("");
 
@@ -24,12 +24,21 @@ const NFTCard = ({ nft, listNFTForSale }) => {
             {nft.metadata.description && (
                 <p className="text-sm text-gray-600 mb-3">{nft.metadata.description}</p>
             )}
-            <button 
-                onClick={() => setShowModal(true)}
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition"
-            >
-                List for Sale
-            </button>
+             {nft.listed ? (
+                <button
+                    onClick={() => cancelListing(nft.tokenId)}
+                    className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition"
+                >
+                    Cancel Listing
+                </button>
+            ) : (
+                <button 
+                    onClick={() => setShowModal(true)}
+                    className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition"
+                >
+                    List for Sale
+                </button>
+            )}
             
             {showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -78,11 +87,9 @@ const NFTStore = ({ mintToken }) => {
   const chainId = useChainId();
   const wagmiConfig = useConfig();
 
-  // Add debugging console log
-  console.log("NFTStore rendering with:", { address, chainId, userNFTsCount: userNFTs.length });
 
   useEffect(() => {
-    // Only proceed if we have the necessary data
+    // Checks
     if (!address) {
       setLoadingNFTs(false);
       return;
@@ -153,11 +160,16 @@ const NFTStore = ({ mintToken }) => {
                 continue;
               }
               const metadata = await metadataResponse.json();
-              
+
+              const listing = await contract.listings(tokenId); // Fetch the listing data
+              const isListed = listing.isListed; // Check if it's listed
+
+
               // Ensure we have a valid metadata object
               userTokens.push({ 
                 tokenId, 
-                metadata: metadata || {} 
+                metadata: metadata || {},
+                listed: isListed 
               });
             } catch (error) {
               console.log(`Error fetching metadata for token ${tokenId}:`, error);
@@ -208,8 +220,10 @@ const NFTStore = ({ mintToken }) => {
         import.meta.env.VITE_NFT_CONTRACT_ADDRESS,
         NFT_ABI,
         signer
-      );      
-      const approvalTx = await contract.approve(contract.address, tokenId);
+      );   
+      
+      
+      const approvalTx = await contract.approve( import.meta.env.VITE_NFT_CONTRACT_ADDRESS, tokenId);
       await approvalTx.wait();  // Wait for approval transaction to complete
       alert("Contract is now approved to transfer your NFT");
        
@@ -225,6 +239,35 @@ const NFTStore = ({ mintToken }) => {
       alert(`Error listing NFT: ${error.message}`);
     }
   };
+
+  const cancelListing = async (tokenId) => {
+    if (!address || !chainId) return alert("Wallet not connected");
+
+    try {
+        const provider = await getEthersProvider(wagmiConfig, { chainId });
+        if (!provider) return alert("Failed to get provider");
+
+        const signer = await getEthersSigner(wagmiConfig, { chainId });
+        if (!signer) return alert("Failed to get signer");
+
+        const contract = new Contract(
+            import.meta.env.VITE_NFT_CONTRACT_ADDRESS,
+            NFT_ABI,
+            signer
+        );
+
+        const tx = await contract.cancelListing(tokenId);
+        await tx.wait();
+
+        alert("NFT listing cancelled successfully!");
+        fetchUserNFTs(); // Refresh the user's NFTs after canceling the listing
+
+    } catch (error) {
+        console.error("Error canceling NFT listing:", error);
+        alert(`Error canceling NFT: ${error.message}`);
+    }
+};
+
 
   return (
     <div className="p-4">
@@ -242,6 +285,7 @@ const NFTStore = ({ mintToken }) => {
                 key={nft.tokenId}
                 nft={nft} // Pass the entire NFT object
                 listNFTForSale={listNFTForSale}
+                cancelListing={cancelListing}
               />
             ) : null
           ))}

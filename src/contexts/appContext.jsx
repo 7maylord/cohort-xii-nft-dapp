@@ -46,6 +46,19 @@ export const AppProvider = ({ children }) => {
             .mintPrice()
             .then((price) => setMintPrice(price))
             .catch((error) => console.error("error: ", error));
+        
+        // Task 1: Listen for the "Minted" event and log the token ID and token URI
+        const handleMintEvent =async (minter, tokenId) => {
+            console.log(`User ${minter} minted NFT with Token ID:: ${tokenId}`);
+            setNextTokenId(tokenId + BigInt(1));
+        }
+
+        contract.on("Minted", handleMintEvent);
+
+        return () => {
+            contract.off("Minted", handleMintEvent);
+        }
+
     }, []);
 
     useEffect(() => {

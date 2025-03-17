@@ -9,7 +9,7 @@ const Footer = () => {
             width="100%"
             align="center"
             justify="between"
-            className="border-t-1 border-primary p-4 items-center h-18"
+            className="flex border-t-1 border-primary p-4 items-center h-18"
         >
             <Box>
                 <Text

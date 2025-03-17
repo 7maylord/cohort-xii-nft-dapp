@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import { useAccount, useChainId, useConfig } from "wagmi";
 import { useAppContext } from "../contexts/appContext";
 import { Contract } from "ethers";

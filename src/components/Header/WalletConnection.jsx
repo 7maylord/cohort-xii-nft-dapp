@@ -13,6 +13,13 @@ const WalletConnection = () => {
     if (!account.address) {
         return <WalletModal />;
     }
+
+    function copyAddress() {
+        navigator.clipboard.writeText(account.address);
+        alert("Address copied to clipboard");
+    }
+
+
     return (
         <Popover.Root>
             <Popover.Trigger>
@@ -35,18 +42,20 @@ const WalletConnection = () => {
                     target="_blank"
                     rel="noreferrer"
                 >
-                    <span className="flex items-center gap-4 w-full px-4 py-2">
+                    <span className="flex items-center gap-4 w-full px-4 py-2 text-primary">
                         <Icon icon="gridicons:external" className="w-6 h-6" />
                         <span>Explorer</span>
                     </span>
                 </a>
-                <button className="w-full flex gap-4 items-center p-4 text-primary rounded-md">
+                <button 
+                    onClick={copyAddress}
+                    className="w-full flex gap-4 items-center p-4 text-primary rounded-md cursor-pointer">
                     <Icon icon="solar:copy-line-duotone" className="w-6 h-6" />
                     <span>Copy</span>
                 </button>
                 <button
                     onClick={disconnect}
-                    className="w-full flex gap-4 items-center p-4 text-primary rounded-md"
+                    className="w-full flex gap-4 items-center p-4 text-primary rounded-md cursor-pointer"
                 >
                     <Icon
                         icon="grommet-icons:power-shutdown"

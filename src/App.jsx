@@ -5,6 +5,7 @@ import NFTCard from "./components/NFTCard";
 import useMintToken from "./hooks/useMintToken";
 import { useState } from "react";
 import NFTStore from "./components/NFTStore";
+import Marketplace from "./components/NFTMarketplace";
 
 
 
@@ -88,8 +89,7 @@ function App() {
                             <h1 className="text-xl font-bold">Marketplace</h1>
                             <p className="text-gray-500">Buy and sell NFTs on the marketplace</p>
                             <div className="mt-4">
-                                {/* Implement Marketplace Listings Here */}
-                                <p>NFTs available for sale will be listed here.</p>
+                                <Marketplace />
                             </div>
                         </div>
                     )}

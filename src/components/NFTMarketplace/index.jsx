@@ -2,14 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Contract, ethers } from "ethers";
 import NFT_ABI from "../../ABI/nft.json";
 import { useChainId, useConfig } from "wagmi";
-import {
-  getEthersProvider,
-  getEthersSigner,
-} from "../../config/wallet-connection/adapter";
+import { getEthersProvider, getEthersSigner } from "../../config/wallet-connection/adapter";
+import { toast } from "react-toastify";
+import { shortenAddress, truncateString } from "../../utils";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 const Marketplace = () => {
   const [marketplaceListings, setMarketplaceListings] = useState([]);
-  const [nftMetadata, setNftMetadata] = useState({});
   const chainId = useChainId();
   const wagmiConfig = useConfig();
 
@@ -47,8 +46,9 @@ const Marketplace = () => {
       }
 
       setMarketplaceListings(listings);
+      toast.success("Marketplace listings fetched successfully");
     } catch (error) {
-      console.error("Error fetching marketplace listings:", error);
+      toast.error("Error fetching marketplace listings:", error);
     }
   };
 
@@ -60,22 +60,22 @@ const Marketplace = () => {
       const metadata = await response.json();
       return metadata;
     } catch (error) {
-      console.error(`Error fetching metadata for token ${tokenId}:`, error);
+      toast.error(`Error fetching metadata for token ${tokenId}:::`, error);
       return null;
     }
   };
 
   const handleBuyNFT = async (tokenId, price) => {
-    if (!price) return alert("Invalid price");
+    if (!price) return toast.warn("Invalid price");
     try {
       const provider = await getEthersProvider(wagmiConfig, { chainId });
       if (!provider) {
-        return alert("Failed to get provider");
+        return toast.warn("Failed to get provider");
       }
 
       const signer = await getEthersSigner(wagmiConfig, { chainId });
       if (!signer) {
-        return alert("Failed to get signer");
+        return toast.warn("Failed to get signer");
       }
 
       const contract = new Contract(
@@ -90,70 +90,69 @@ const Marketplace = () => {
       const tx = await contract.buyNFT(tokenId, { value: formattedPrice });
       await tx.wait();
 
-      alert("NFT purchased successfully!");
+      toast.success("NFT purchased successfully!");
       fetchMarketplaceListings(); // Refresh the listings after purchase
     } catch (error) {
-      console.error("Error buying NFT:", error);
-      alert("Error buying NFT: " + error.message);
+      toast.error("Error buying NFT: " + error.message);
     }
   };
 
   return (
-    <div>
-      <h2>Marketplace Listings</h2>
-      <div>
+    <div className="container mx-auto p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {marketplaceListings.length > 0 ? (
           marketplaceListings.map((listing) => (
-            <div
-              key={listing.tokenId}
-              className="border p-4 mb-4 rounded-lg"
-            >
+            <div key={listing.tokenId} className="border p-4 rounded-lg shadow-lg hover:shadow-2xl transition-shadow duration-300">
               {/* NFT Image */}
               {listing.metadata && listing.metadata.image && (
                 <img
                   src={listing.metadata.image}
                   alt={listing.metadata.name}
-                  className="w-full h-48 object-cover rounded-md mb-3"
+                  className="rounded-xl w-full h-64"
                 />
               )}
 
               {/* NFT Name */}
-              <h3 className="text-lg font-bold">{listing.metadata?.name || "NFT #" + listing.tokenId}</h3>
+              <h3 className="text-xl font-semibold text-center">{listing.metadata?.name || `NFT #${listing.tokenId}`}</h3>
 
               {/* NFT Description */}
               {listing.metadata?.description && (
-                <p className="text-sm text-gray-600 mb-3">{listing.metadata.description}</p>
+                <p className="text-sm text-gray-600 mt-2">{truncateString(listing.metadata.description, 100)}</p>
               )}
 
               {/* NFT Attributes */}
               {listing.metadata?.attributes && (
-                <div className="mb-3">
-                  <h4 className="text-sm font-semibold">Attributes:</h4>
-                  <ul>
-                    {listing.metadata.attributes.map((attr, index) => (
-                      <li key={index} className="text-sm text-gray-500">
-                        {attr.trait_type}: {attr.value}
-                      </li>
-                    ))}
-                  </ul>
+                <div className="mt-3 flex gap-2">
+                <Icon icon="ri:file-list-3-line" className="w-6 h-6" />
+                <span>{listing.metadata.attributes.length} Attributes</span>
                 </div>
               )}
 
-              {/* Price and Seller */}
-              <p>Price: {listing.price} ETH</p>
-              <p>Seller: {listing.seller}</p>
+              {/* Price */}
+              <div className="mt-3 flex gap-2 text-center">
+              <Icon icon="ri:eth-line" className="w-6 h-6" />
+              <span className="font-bold">{listing.price} ETH</span>                
+              </div>
+
+              {/* seller */}
+              <div className="mt-3 flex gap-2">
+              <Icon icon="material-symbols:person-rounded" className="w-6 h-6" />
+              <p className="text-sm text-gray-500"> {shortenAddress(listing.seller)}</p>
+              </div>
 
               {/* Buy Button */}
-              <button
-                onClick={() => handleBuyNFT(listing.tokenId, listing.price)}
-                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-              >
-                Buy NFT
-              </button>
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => handleBuyNFT(listing.tokenId, listing.price)}
+                  className="bg-blue-500 w-full p-4 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors duration-300"
+                >
+                  Buy NFT
+                </button>
+              </div>
             </div>
           ))
         ) : (
-          <p>No NFTs listed in the marketplace</p>
+          <p className="col-span-4 text-center">No NFTs listed in the marketplace</p>
         )}
       </div>
     </div>

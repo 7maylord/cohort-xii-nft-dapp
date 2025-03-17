@@ -5,6 +5,7 @@ import { Contract } from "ethers";
 import NFT_ABI from "../ABI/nft.json";
 import { getEthersSigner } from "../config/wallet-connection/adapter";
 import { isSupportedNetwork } from "../utils";
+import { toast } from "react-toastify";
 // import { config } from "../config/wallet-connection/wagmi";
 
 const useMintToken = () => {
@@ -13,9 +14,9 @@ const useMintToken = () => {
     const wagmiConfig = useConfig();
     const { nextTokenId, maxSupply, mintPrice } = useAppContext();
     return useCallback(async () => {
-        if (!address) return alert("Please connect your wallet");
-        if (!isSupportedNetwork(chainId)) return alert("Unsupported network");
-        if (nextTokenId >= maxSupply) return alert("No more tokens to mint");
+        if (!address) return toast.warn("Please connect your wallet");
+        if (!isSupportedNetwork(chainId)) return toast.warn("Unsupported network");
+        if (nextTokenId >= maxSupply) return toast.warn("No more tokens to mint");
 
         const signer = await getEthersSigner(wagmiConfig);
 
@@ -32,7 +33,7 @@ const useMintToken = () => {
                 throw new Error("Transaction failed");
             }
 
-            alert("Token minted successfully");
+            console.log("Token minted successfully");
         } catch (error) {
             console.error("error: ", error);
         }

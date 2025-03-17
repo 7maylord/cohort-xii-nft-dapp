@@ -30,7 +30,8 @@ const WalletModal = () => {
     return (
         <Dialog.Root>
             <Dialog.Trigger>
-                <button className="bg-secondary text-primary px-4 py-2 rounded-md cursor-pointer">
+                <button className="bg-secondary flex gap-2 text-primary px-4 py-2 rounded-md">
+                    <Icon icon="bx:wallet" className="w-6 h-6" />
                     Connect Wallet
                 </button>
             </Dialog.Trigger>

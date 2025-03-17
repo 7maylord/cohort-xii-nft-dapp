@@ -14,12 +14,12 @@ const Header = () => {
         >
             <Box>
                 <Text
-                    className="text-secondary font-bold text-2xl"
+                    className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-yellow-500 font-bold text-2xl"
                     as="span"
                     role="img"
                     aria-label="logo"
                 >
-                    NFT dApp 🚀
+                    DApp de Mayo 🚀
                 </Text>
             </Box>
             <WalletConnection />

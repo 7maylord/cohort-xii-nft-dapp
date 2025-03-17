@@ -2,6 +2,7 @@ import { Contract } from "ethers";
 import { createContext, useContext, useEffect, useState } from "react";
 import { getReadOnlyProvider } from "../utils";
 import NFT_ABI from "../ABI/nft.json";
+import { toast } from "react-toastify";
 
 const appContext = createContext();
 
@@ -49,7 +50,7 @@ export const AppProvider = ({ children }) => {
         
         // Task 1: Listen for the "Minted" event and log the token ID and token URI
         const handleMintEvent =async (minter, tokenId) => {
-            console.log(`User ${minter} minted NFT with Token ID:: ${tokenId}`);
+            toast.success(`User ${minter} minted NFT with Token ID:: ${tokenId}`);
             setNextTokenId(tokenId + BigInt(1));
         }
 

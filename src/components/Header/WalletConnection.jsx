@@ -5,6 +5,7 @@ import { shortenAddress } from "../../utils";
 import { Flex, Popover } from "@radix-ui/themes";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { supportedNetworks } from "../../config/wallet-connection/wagmi";
+import { toast } from "react-toastify";
 
 const WalletConnection = () => {
     const account = useAccount();
@@ -16,7 +17,12 @@ const WalletConnection = () => {
 
     function copyAddress() {
         navigator.clipboard.writeText(account.address);
-        alert("Address copied to clipboard");
+        toast.success("Address copied to clipboard");
+    }
+
+    function handleDisconnect() {
+        disconnect();
+        toast.info("Disconnected from wallet");
     }
 
 
@@ -49,13 +55,13 @@ const WalletConnection = () => {
                 </a>
                 <button 
                     onClick={copyAddress}
-                    className="w-full flex gap-4 items-center p-4 text-primary rounded-md cursor-pointer">
+                    className="w-full flex gap-4 items-center p-4 text-primary rounded-md">
                     <Icon icon="solar:copy-line-duotone" className="w-6 h-6" />
                     <span>Copy</span>
                 </button>
                 <button
-                    onClick={disconnect}
-                    className="w-full flex gap-4 items-center p-4 text-primary rounded-md cursor-pointer"
+                    onClick={handleDisconnect}
+                    className="w-full flex gap-4 items-center p-4 text-primary rounded-md"
                 >
                     <Icon
                         icon="grommet-icons:power-shutdown"

@@ -16,17 +16,12 @@ function App() {
     const tokenMetaDataArray = Array.from(tokenMetaData.values());
     const mintToken = useMintToken();
 
-    const [activeTab, setActiveTab] = useState("mint");
+    const [activeTab, setActiveTab] = useState();
 
     return (
         <div>
             <Header />
             <main className="h-full min-h-[calc(100vh-128px)] p-4">
-                <div className="text-center">
-                    <h1 className="text-3xl font-bold">NFT dApp</h1>
-                    <p className="text-primary font-medium">Mint and manage your NFTs</p>
-                </div>
-
                 {/* Tabs Navigation */}
                 <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-4  mt-6">
                     <button 

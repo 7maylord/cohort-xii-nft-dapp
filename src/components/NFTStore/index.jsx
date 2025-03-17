@@ -1,23 +1,23 @@
 import { useState, useEffect } from "react";
 import { Contract, parseEther } from "ethers"; 
-import { useAppContext } from "../../contexts/appContext";
 import NFT_ABI from "../../ABI/nft.json";
 import { useAccount, useChainId, useConfig } from "wagmi";
 import { getEthersProvider, getEthersSigner } from "../../config/wallet-connection/adapter";
 import { isSupportedNetwork } from "../../utils";
+import { toast } from "react-toastify";
 
-// NFTCard component that's contained within this file
+
 const NFTCard = ({ nft, listNFTForSale, cancelListing }) => {
     const [showModal, setShowModal] = useState(false);
     const [price, setPrice] = useState("");
 
     return (
-        <div key={nft.tokenId} className="border rounded-lg p-4 shadow-md">
+        <div key={nft.tokenId} className="border p-4 rounded-lg shadow-lg hover:shadow-2xl transition-shadow duration-300">
             {nft.metadata.image && (
                 <img 
                     src={nft.metadata.image} 
                     alt={nft.metadata.name || "NFT"} 
-                    className="w-full h-48 object-cover rounded-md mb-3"
+                    className="rounded-xl w-full h-64"
                 />
             )}
             <h3 className="text-lg font-bold mb-2">{nft.metadata.name || `NFT #${nft.tokenId}`}</h3>
@@ -64,7 +64,7 @@ const NFTCard = ({ nft, listNFTForSale, cancelListing }) => {
                                         listNFTForSale(nft.tokenId, price); 
                                         setShowModal(false);
                                     } else {
-                                        alert("Please enter a price");
+                                        toast.warn("Please enter a price");
                                     }
                                 }}
                                 className="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -79,8 +79,7 @@ const NFTCard = ({ nft, listNFTForSale, cancelListing }) => {
     );
 };
 
-const NFTStore = ({ mintToken }) => {
-  const { mintPrice, nextTokenId } = useAppContext();
+const NFTStore = () => {
   const [userNFTs, setUserNFTs] = useState([]);
   const [loadingNFTs, setLoadingNFTs] = useState(true);
   const { address } = useAccount();
@@ -96,8 +95,7 @@ const NFTStore = ({ mintToken }) => {
     }
 
     if (!isSupportedNetwork(chainId)) {
-      console.log("Unsupported network:", chainId);
-      alert("Unsupported network");
+      toast.warn("Unsupported network:", chainId);
       setLoadingNFTs(false);
       return;
     }
@@ -106,7 +104,7 @@ const NFTStore = ({ mintToken }) => {
   }, [address, chainId]);
 
   const fetchUserNFTs = async () => {
-    if (!address || !chainId) return;
+    // if (!address || !chainId) return;
     
     setLoadingNFTs(true);
     
@@ -114,8 +112,7 @@ const NFTStore = ({ mintToken }) => {
       // Get the provider using wagmi client
       const provider = await getEthersProvider(wagmiConfig, { chainId });
       if (!provider) {
-        console.log("Failed to get provider");
-        alert("Failed to get provider");
+        toast.error("Failed to get provider");
         setLoadingNFTs(false);
         return;
       }
@@ -130,17 +127,16 @@ const NFTStore = ({ mintToken }) => {
       // Get the balance of NFTs the user owns
       const balance = await contract.balanceOf(address);
       const balanceNumber = parseInt(balance.toString(), 10);
-      console.log("NFT Balance as number:", balanceNumber);
 
       if (balanceNumber === 0) {
-        console.log("User does not own any NFTs.");
+        toast.info("User does not own any NFTs.");
         setUserNFTs([]);
         setLoadingNFTs(false);
         return;
       }
 
+      // fetch the total supply of NFTs
       const totalSupply = await contract.totalSupply();
-      console.log("Total NFT supply:", totalSupply.toString());
 
       const userTokens = [];
 
@@ -150,13 +146,12 @@ const NFTStore = ({ mintToken }) => {
           const owner = await contract.ownerOf(tokenId);
           if (owner.toLowerCase() === address.toLowerCase()) {
             let tokenURI = await contract.tokenURI(tokenId);
-            console.log(`Token URI for Token ID ${tokenId}:`, tokenURI);
 
             try {
               // Fetch metadata from the tokenURI
               const metadataResponse = await fetch(tokenURI);
               if (!metadataResponse.ok) {
-                console.log(`Failed to fetch metadata for token ${tokenId}`);
+                toast.info(`Failed to fetch metadata for token ${tokenId}`);
                 continue;
               }
               const metadata = await metadataResponse.json();
@@ -172,7 +167,7 @@ const NFTStore = ({ mintToken }) => {
                 listed: isListed 
               });
             } catch (error) {
-              console.log(`Error fetching metadata for token ${tokenId}:`, error);
+              toast.error(`Error fetching metadata for token ${tokenId}:`, error);
               // Add with empty metadata if fetch fails
               userTokens.push({ 
                 tokenId, 
@@ -181,7 +176,7 @@ const NFTStore = ({ mintToken }) => {
             }
           }
         } catch (error) {
-          console.log(`Error checking owner for token ${tokenId}:`, error);
+          toast.error(`Error checking owner for token ${tokenId}:`, error);
         }
       }
       
@@ -191,28 +186,28 @@ const NFTStore = ({ mintToken }) => {
       
       // Only show alert if NFTs were found
       if (userTokens.length > 0) {
-        alert("NFTs fetched successfully!");
+        toast.success("NFTs fetched successfully!");
       }
     } catch (error) {
-      console.error("Error fetching NFTs:", error);
+      toast.error("Error fetching NFTs:", error);
     } finally {
       setLoadingNFTs(false);
     }
   };
 
   const listNFTForSale = async (tokenId, price) => {
-    if (!price) return alert("Please enter a price");
-    if (!address || !chainId) return alert("Wallet not connected");
+    if (!price) return toast.warn("Please enter a price");
+    if (!address || !chainId) return toast.warn("Wallet not connected");
     
     try {
       const provider = await getEthersProvider(wagmiConfig, { chainId });
       if (!provider) {
-        return alert("Failed to get provider");
+        return toast.warn("Failed to get provider");
       }
       
       const signer = await getEthersSigner(wagmiConfig, { chainId });
       if (!signer) {
-        return alert("Failed to get signer");
+        return toast.warn("Failed to get signer");
       }
       
       // Initialize the contract with the signer
@@ -225,7 +220,7 @@ const NFTStore = ({ mintToken }) => {
       
       const approvalTx = await contract.approve( import.meta.env.VITE_NFT_CONTRACT_ADDRESS, tokenId);
       await approvalTx.wait();  // Wait for approval transaction to complete
-      alert("Contract is now approved to transfer your NFT");
+      toast.success("Contract is now approved to transfer your NFT");
        
       const formattedPrice = parseEther(price);
       const tx = await contract.listNFTForSale( 
@@ -233,10 +228,11 @@ const NFTStore = ({ mintToken }) => {
         formattedPrice
       );
       await tx.wait();
-      alert("NFT listed for sale successfully!");
+      toast.success("NFT listed for sale successfully!");
+      fetchUserNFTs(); // Refresh the user's NFTs after listing for sale
     } catch (error) {
       console.error("Error listing NFT for sale:", error);
-      alert(`Error listing NFT: ${error.message}`);
+      toast.error(`Error listing NFT: ${error.message}`);
     }
   };
 
@@ -245,10 +241,10 @@ const NFTStore = ({ mintToken }) => {
 
     try {
         const provider = await getEthersProvider(wagmiConfig, { chainId });
-        if (!provider) return alert("Failed to get provider");
+        if (!provider) return toast.warn("Failed to get provider");
 
         const signer = await getEthersSigner(wagmiConfig, { chainId });
-        if (!signer) return alert("Failed to get signer");
+        if (!signer) return toast.warn("Failed to get signer");
 
         const contract = new Contract(
             import.meta.env.VITE_NFT_CONTRACT_ADDRESS,
@@ -259,12 +255,12 @@ const NFTStore = ({ mintToken }) => {
         const tx = await contract.cancelListing(tokenId);
         await tx.wait();
 
-        alert("NFT listing cancelled successfully!");
+        toast.success("NFT listing cancelled successfully!");
         fetchUserNFTs(); // Refresh the user's NFTs after canceling the listing
 
     } catch (error) {
         console.error("Error canceling NFT listing:", error);
-        alert(`Error canceling NFT: ${error.message}`);
+        toast.error(`Error canceling NFT: ${error.message}`);
     }
 };
 
